@@ -1,0 +1,934 @@
+---
+title: "Anthropogenic Climate Change and the Earth's Changing Landscape"
+author: 
+    - A Disgruntled Georgetown Student (joking)
+date: last-modified
+date-format: long
+format: 
+  html:
+    code-tools: true
+    embed-resources: true
+    grid:
+        body-width: 1100px
+theme: lux
+echo: false
+vega:
+  renderer:
+    css: |
+      @import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@200;300;400;500;600;700&display=swap");
+      @font-face {
+        font-family: 'Nunito Sans';
+      }
+
+      .vega-embed .marks text {
+        font-family: 'Nunito Sans', sans-serif;
+      }
+---
+# Introduction
+[In 2000](http://people.whitman.edu/~frierspr/Crutzen%20and%20Stoermer%202000%20Anthropocene%20essay.pdf), atmospheric chemist Paul J Crutzen and diatom researcher Eugene F Stoermer coined the term "the Anthropocene," a new geological era in our planet's history. The term Anthropocene reflects the profound impact of human activity on Earth's geological and ecological systems.
+
+Despite humans' relatively brief existence—approximately 200,000 years compared to the Earth's 4.5 billion-year history—we have substantially transformed the planet's landscapes, atmosphere, and biodiversity. Over the past six decades, known as the Great Acceleration, human activities have intensified at an unprecedented pace and scale.
+
+This acceleration is evident in various ways, including soaring carbon dioxide emissions, rising global temperatures, acidifying oceans, widespread habitat destruction, species extinction, and extensive exploitation of natural resources. These trends highlight the extent to which human actions have altered the fundamental processes and equilibrium of the planet, impacting not only our own survival but also the well-being of countless other species, often being called *anthropogenic climate change*. 
+
+It is with these consequences of climate changes that I want to argue and directly showcase, primarily through the outlet of data visualization, that *anthropogenic climate change is not only responsible for changes in precipitation patterns and vegetation subsistence across the globe, but also specifically in Southeastern Utah, where the dataset given for this project represents..* 
+
+
+
+# Methods
+## Data Overview
+For this project, I use the two following data sources: the provided dataset, [*Climate and drought historical and projected future exposure metrics for Southeastern Utah Group National Parks*](https://www.sciencebase.gov/catalog/file/get/61a6952fd34eb622f6978d9f?f=__disk__78%2F99%2F9b%2F78999b749568b2fbba86ce5dc9fc89aebe469388&transform=1&allowOpen=true), and historical data from the [*Canadian Centre for Climate Modelling and Analysis (CCCma) CanESM5-CanOE model*](https://www.wdc-climate.de/ui/cmip6?input=CMIP6.CMIP.CCCma.CanESM5.historical). I found the temperature data in the first dataset to be insufficient and also really confusing, so being a climate data scientist myself, I pulled in the second data source in order to tell the story I want to tell.
+
+The CanESM5 data includes simulations of Earth's climate over recent history, covering various components such as the atmosphere, land, ocean, and sea ice. The CanESM5 model includes interactive components for aerosols, atmosphere, atmospheric chemistry, land, land ice, ocean, ocean biogeochemistry, and sea ice. Each component has specific characteristics, such as resolution and model type. For this project, I focus on land and sea temperatures from both a spatial and temporal perspective.
+
+## Tools
+For this project, I use a combination of both Matlab and R. Matlab is a popular tool in the climate data science community and a tool I am very comfortable with in terms of climate applications.
+
+
+
+# The Global Effect of Carbon Emissions
+It is no secret that human activities are causing a rapid increase in atmospheric carbon dioxide levels, leading to significant environmental impacts. In 2023, the global average carbon dioxide concentration [reached a record high](https://www.climate.gov/news-features/understanding-climate/climate-change-atmospheric-carbon-dioxide) of 419.3 parts per million (ppm), marking a 50% increase since before the Industrial Revolution. The annual rate of increase over the past 60 years is about 100 times faster than natural fluctuations observed during previous periods, such as the end of the last ice age. This rise in carbon dioxide levels is primarily attributed to the burning of fossil fuels, which releases carbon that had been sequestered over millions of years. The ocean has absorbed a considerable amount of this excess carbon dioxide, resulting in a 30% increase in acidity. These trends highlight the urgent need to reduce carbon emissions and mitigate the impacts of climate change.
+
+With these known facts about carbon emissions being at an all time, let's observe how our global climate has been impacted by these detrimental changes from the perspective of temperature, precipitation, and vegetation.
+
+
+## Temperature Anomalies
+We will first look at temperature and how it has changed on our planet over the course of the human history (at least since the dawn of the Industrial Revolution).
+
+While we could simply look at mean temperature over time, doing such does not tell us the entire story of how our planet has changed. A better perspective would be to look at anomalous temperatures relative to some sort of long-term average calculation, giving us a better indicator of when, where, and how temperature change is manifesting itself according to climate change.
+
+In the following figure, *Figure 1*, we take a look at decadal temperature anomalies from 1880 to present day. The figure displays the mean temperature anomaly across the globe for each decade, starting in 1900. Essentially, we are visualizing the temperature deviation (in degrees Celcius) for various spots around the globe relative to the average temperature up until the point of time when each temperature observation was recorded.
+
+```{Matlab, eval=FALSE}
+%%  Decadal mean anomalies
+
+figure; 
+% Set the size of the figure
+figureWidth = 1200;  % Width in pixels
+figureHeight = 1200;  % Height in pixels
+set(gcf, 'Position', [100, 100, figureWidth, figureHeight]);  % [left, bottom, width, height]
+
+for ii = 1:12
+
+    %Option 1
+    ind1 = 240 + 120*(ii-1)+1;
+    ind2 = 240 + 120*ii;
+    
+    % Option 2
+    yy = 1900 + 10*(ii-1);
+    ind1 = find(time > yy, 1);
+    ind2 = find(time < yy + 10);
+    ind2 = ind2(end);
+
+    % Option 3
+    
+    Field = squeeze(mean(temp_anom(:, :, ind1:ind2),3));
+    
+    subplot(3,4,ii)
+    m_proj('robinson','long',[-180 180],'lat',[-80 80]); 
+    [lat_map, lon_map] = meshgrid(linspace(-180, 180,360),linspace(-90, 90,360));
+    Lon_field = repmat(lon,1,90);
+    Lat_field = repmat(lat',180,1);
+    Field_map = griddata(double(Lon_field), double(Lat_field), Field, lat_map, lon_map); 
+    m_pcolor(lat_map, lon_map, Field_map); shading flat;  
+    
+    m_coast('color',[0.2 .2 0.2]); 
+    m_grid('linest','none','FontSize',8,'XTicklLabel',[]);,%'yticklabels',[]);   
+    
+    
+    c = colorbar;
+    colormap('jet')
+    caxis([-3.5, 3.5])
+    str = strcat(num2str(yr(ind1)), '-', num2str(yr(ind2)));
+    title(str)
+
+end
+
+% Save the figure as a PNG file with a specific size
+outputFileName = 'decadal_anomalies.png';
+set(gcf, 'PaperPositionMode', 'auto');  % Ensure the size is based on the 'Position' property
+print(gcf, outputFileName, '-dpng', '-r300');  % '-r300' sets the resolution to 300 DPI
+```
+
+##### Mean Decadal Temperature Anomalies
+
+![](figs/decadal_anomalies.png)
+*Figure 1. Data Source: Canadian Centre for Climate Modelling and Analysis (CCCma) CanESM5-CanOE model*
+
+Overall, we can notice that as time has progressed, temperature anomalies relative to long-run temperature averages have gone WAY up. In the most recent decade, the 2010s, temperature anomalies are almost ubiquitously common throughout the globe. There is a clear pattern towards global warming. While this observation is pretty much dogma within the scientific community these days, it is still a valuable observation to visualize, especially seeing how quick anomalous temperatures have crept up on us.
+
+Seeing how temperature anomalies have developed over the decades, we then are left with questions as to how much of this anomalous temperature fluctuation is due to natural variability in climatic processes and when did the effects of global warming first "emerge" in certain parts of the globe. We explore these questions in the next section.
+
+
+## Noise, Signal, and Time of Emergence
+```{Matlab,eval=FALSE}
+% Noise
+
+filename = 'tas_Amon_CanESM5_historical_r10i1p2f1_gn_185001-201412.nc';
+
+temp_gcm = ncread(filename,'tas');
+lat_gcm = ncread(filename,'lat');
+lon_gcm = ncread(filename,'lon');
+tt = ncread(filename,'time');
+
+% Changing the time variable to be yearly values on the Gregorian calendar
+t0 = datenum('1850-01-01');  
+tt = t0+tt;
+
+tt = double(tt);
+yr = year(tt);
+
+yr_frac = (tt - datenum(strcat(num2str(yr),'-01-01')))/365;
+
+time_gcm = yr + yr_frac; 
+
+
+% Find the indices of elements within the range of 1900 and 1950
+logical_indices = (yr >= 1850) & (yr <= 2014);
+
+indices_1850_2014 = find(logical_indices);
+
+Field = squeeze(mean(temp_gcm(:,:,indices_1850_2014),3));
+
+figure;
+%m_proj(Projection type,'long',[lonmin lonmax],'lat',[latmin latmax]);
+%lonmin and lonmax correspond to the longitudinal range of your map.
+%Likewise latmin, latmax correspond to latitudinal range of map
+m_proj('robinson','long',[0 360],'lat',[-90 90]); 
+% Check your lon variable.  The meshgrid here is creating a grid over the
+% longitude and latitude range of your data.  If lon goes from -180 to 180,
+% then the linspace(-180,180,360)  will work. If lon goes from 0 to 360,
+% then change to linspace(0,360,360)
+[lat_map, lon_map] = meshgrid(linspace(0, 360,360),linspace(-90, 90,360));
+Lon_field = repmat(lon_gcm,1,64);
+Lat_field = repmat(lat_gcm',128,1);
+Field_map = griddata(double(Lon_field), double(Lat_field), Field, lat_map, lon_map); 
+m_pcolor(lat_map, lon_map, Field_map); shading flat;  
+
+m_coast('color',[0.2 .2 0.2]); 
+m_grid('linest','none');%,'xticklabels',[],'yticklabels',[]);   
+
+c = colorbar;
+colormap('jet')
+caxis([min(Field(:)), max(Field(:))])
+title('Historical Mean Temperature (K) vs 1900-1950')
+
+%% Signal
+temp_gcm_1900_1950 = temp_gcm(:,:,indices_1850_2014);
+numYears = 50;  % Number of years
+
+% Preallocate the tmp variable
+tmp = zeros(size(temp_gcm_1900_1950, 1), size(temp_gcm_1900_1950, 2), numYears);
+
+for ii = 1:numYears
+    tmp(:,:,ii) = mean(temp_gcm_1900_1950(:,:,12*(ii-1)+1:12*ii), 3); % computing annual average
+end
+
+Field = squeeze(tsnanstd(tmp,[],3));  % standard deviation of the annual average
+
+figure;
+m_proj('robinson','long',[-0 360],'lat',[-90 90]); 
+[lat_map, lon_map] = meshgrid(linspace(0, 360,360),linspace(-90, 90,360));
+Lon_field = repmat(lon_gcm,1,64);
+Lat_field = repmat(lat_gcm',128,1);
+Field_map = griddata(double(Lon_field), double(Lat_field), Field, lat_map, lon_map); 
+m_pcolor(lat_map, lon_map, Field_map); shading flat;  
+
+m_coast('color',[0.2 .2 0.2]); 
+m_grid('linest','none');%,'xticklabels',[],'yticklabels',[]);   
+
+c = colorbar;
+colormap('jet')
+
+caxis([0, 2])
+title('Observed temperature variability (Noise) (°C)')
+
+
+%% Signal
+
+% Note: the indicies 601:1213 are the indicies for the years 1900 to 1950
+figure;
+Field = squeeze(tsnanmean(temp_gcm(:,:,end-25*12:end),3)) - squeeze(tsnanmean(temp_gcm(:,:,1:1980),3));
+
+m_proj('robinson','long',[-0 360],'lat',[-90 90]); 
+[lat_map, lon_map] = meshgrid(linspace(0, 360,360),linspace(-90, 90,360));
+Lon_field = repmat(lon_gcm,1,64);
+Lat_field = repmat(lat_gcm',128,1);
+Field_map = griddata(double(Lon_field), double(Lat_field), Field, lat_map, lon_map); 
+m_pcolor(lat_map, lon_map, Field_map); shading flat;  
+
+m_coast('color',[0.2 .2 0.2]); 
+m_grid('linest','none');%,'xticklabels',[],'yticklabels',[]);   
+
+c = colorbar;
+colormap('jet')
+caxis([-1, 4])
+title('Observed temperature change (Signal)(°C)')
+
+
+%% Signal to Noise
+
+% Getting signal and noise again as their own variables
+temp_gcm_1900_1950 = temp_gcm(:,:,indices_1850_2014);
+numYears = 50;  % Number of years
+
+% Preallocate the tmp variable
+tmp = zeros(size(temp_gcm_1900_1950, 1), size(temp_gcm_1900_1950, 2), numYears);
+
+for ii = 1:numYears
+    tmp(:,:,ii) = mean(temp_gcm_1900_1950(:,:,12*(ii-1)+1:12*ii), 3); % computing annual average
+end
+
+Field_noise = squeeze(tsnanstd(tmp,[],3));
+
+Field_signal = squeeze(tsnanmean(temp_gcm(:,:,end-25*12:end),3)) - squeeze(tsnanmean(temp_gcm(:,:,601:1213),3));
+
+Field = Field_signal ./ Field_noise;
+
+% Create plot
+figure;
+m_proj('robinson','long',[-0 360],'lat',[-90 90]); 
+[lat_map, lon_map] = meshgrid(linspace(0, 360,360),linspace(-90, 90,360));
+Lon_field = repmat(lon_gcm,1,64);
+Lat_field = repmat(lat_gcm',128,1);
+Field_map = griddata(double(Lon_field), double(Lat_field), Field, lat_map, lon_map); 
+m_pcolor(lat_map, lon_map, Field_map); shading flat;  
+
+m_coast('color',[0.2 .2 0.2]); 
+m_grid('linest','none');%,'xticklabels',[],'yticklabels',[]);   
+
+c = colorbar;
+colormap('jet')
+
+caxis([-1,6])
+title('Signal to Noise Ratio')
+
+
+%% ToE
+% Parameters
+windowSize = 20;  % 20-year moving window for signal
+stdThreshold = 1;  % Threshold for exceeding historical noise
+
+% Preallocate ToE matrix to store results for each grid cell
+ToE = NaN(size(temp_gcm, 1), size(temp_gcm, 2));
+
+for lonind = 1:size(lon_gcm, 1)
+    for latind = 1:size(lat_gcm, 1)
+        tmp = squeeze(temp_gcm(lonind, latind, :));  % Extract time series of the current grid cell
+
+        % Yearly mean average
+        yearly_average = zeros(floor(length(tmp) / 12), 1);
+        for ii = 1:floor(length(tmp) / 12)
+            yearly_average(ii) = mean(tmp(12 * (ii - 1) + 1 : 12 * ii));
+        end
+
+        yr_vals = time_gcm(6:12:end - 6);  % Centering time vector at year intervals
+
+        % Historical std of annual mean temp
+        ind = yr_vals >= 1900 & yr_vals <= 1950;
+        histnoise = tsnanstd(yearly_average(ind));
+        histmean = tsnanmean(yearly_average(ind));
+
+        % Calculate the 20-year moving average signal
+        Signal = zeros(max(1, floor(length(tmp) / 12) - windowSize + 1), 1);
+        for ii = 1:max(1, floor(length(tmp) / 12) - windowSize + 1)
+            startIdx = 12 * (ii - 1) + 1;
+            endIdx = min(12 * (windowSize + ii), length(tmp));
+            Signal(ii) = tsnanmean(tmp(startIdx:endIdx)); % 20-year moving average signal
+        end
+
+        yr_window = yr_vals((windowSize/2):(end - windowSize/2));  % Corresponding years to the 20-year moving average
+
+        % Find the first year when the Signal is at least 1 std above the historical mean
+        ind = find(Signal > histmean + histnoise * stdThreshold, 1);  % Index of the first year with S > N
+
+        if ~isempty(ind)
+            ToE(lonind, latind) = yr_window(ind);  % Year corresponding to the index
+        end
+    end
+end
+
+% ToE matrix now contains ToE values for each grid cell
+
+%% Making our map
+figure;
+m_proj('robinson','long',[-0 360],'lat',[-90 90]); 
+[lat_map, lon_map] = meshgrid(linspace(0, 360,360),linspace(-90, 90,360));
+Lon_field = repmat(lon_gcm,1,64);
+Lat_field = repmat(lat_gcm',128,1);
+Field_map = griddata(double(Lon_field), double(Lat_field), ToE, lat_map, lon_map); 
+m_pcolor(lat_map, lon_map, Field_map); shading flat;  
+
+m_coast('color',[0.2 .2 0.2]); 
+m_grid('linest','none');%,'xticklabels',[],'yticklabels',[]);   
+
+c = colorbar;
+colormap('jet')
+
+caxis([1950,2015]) % Setting bottom limit to 1950 so more recent ToE's can be seen
+title('Time of Emergence')
+```
+
+In order to observe natural variability and when the effects of global warming first emerged in certain areas of the globe, we must establish definitions of the following [terms](https://www.climate-lab-book.ac.uk/2014/signal-noise-emergence/):
+
+**1. Signal:** In the context of climate change, the signal refers to the long-term trend or pattern of temperature increase observed over time. It represents the underlying change in temperature due to factors like greenhouse gas emissions, solar radiation, and other human-induced influences.
+
+**2. Noise:** Noise refers to the random fluctuations in temperature that occur naturally as part of the climate system's variability. This variability can be caused by phenomena such as El Niño/La Niña events, volcanic eruptions, and other short-term atmospheric processes.
+
+**3. Signal-to-Noise Ratio (S/N):** The signal-to-noise ratio is a measure used to quantify the strength of the climate change signal relative to the background noise or variability in the climate system. It helps to assess the detectability of the signal amid the natural fluctuations in temperature.
+
+**4. Time of Emergence (ToE):** The time of emergence is the point in time when the signal of climate change becomes distinguishable from the background noise of natural variability. It represents the moment when the climate change signal becomes sufficiently large to be detected with confidence. In other words, ToE is the date in which the effects of climate change on temperature can "first" be observed.
+
+##### Global Signal, Noise, and ToE
+
+:::: {.columns}
+
+::: {.column width="49%"}
+![](figs/noise.png) ![](figs/signal_to_noise.png)
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="49%"}
+![](figs/singal.png) ![](figs/toe.png)
+:::
+::::
+*Figure 2. Date Range 1880-Present. Canadian Centre for Climate Modelling and Analysis (CCCma) CanESM5-CanOE model*
+
+### Noise
+In the Noise figure, you will see that noise is the highest at each of the poles, and also fairly high in the Northern Hemisphere between 40 degrees N and 80 degrees N. It is also fairly low in the tropics. In the [reading](https://www.climate-lab-book.ac.uk/2014/signal-noise-emergence/) "The signal, the noise, & the time of emergence" by Ed Hawkins, we can see a figure titled "Observed temperature variability (noise) (oC) that shows a similar pattern to my map, high noise in the north pole, with also fairly high noise in the same northern domain. There appears to be a lack of data for the south pole, unlike our figure, however. Overall, though, our figure does highlight the phenonmena of polar amplication wherein any change in net radiation balance (like greenhouse intensifciation) causes larger changes near the poles than the global average.
+
+### Signal
+The Signal figure highlights some more interesting characteristics of the climate. Once again going back to the [article](https://www.climate-lab-book.ac.uk/2014/signal-noise-emergence/) by Hawkins,there is a map titled "Observed temperature change signal (oC)" which shows the highest signal in the northern pole which can also be seen in my figure. 
+
+One of the most significant points of interest in my figure, though, is the extremely high signal that is around the Himalayas/Tibetan plateau. The signal is so high, that when I first plotted my map with a scale ranging from the minimum and maximum of our Field value, the map really only showed color in this region, so I actually had to adjust the color scaling. The effects of polar amplication again help explain the high signal in the poles, especially in the Arctic circle. 
+
+One theory for the extremely high signal in the Himalayas/Tibetan plateau would be that the area has such a high elevation (the plateau even has an average elevation of 4500m, often being called 'The Roof of the World') that its O-Zone protection is already minimal, making it especially susceptible to high pollution from the Indian subcontient and China and therefore vaster changes in temperature signal. 
+
+### Signal-to-Noise Ratio (S/N) and Time of Emergence (ToE)
+In order to really see where the effects of climate change are having their biggest effects with respect to temperature, we need to look at Signal to Noise ratios across the globe. In our own Signal to Noise Ratio plot, we see that the tropical regions have the largest signals relative to the size of climate variability. In other words, tropical regions are experiencing the largest impacts of climate change. 
+
+We can then use the standard deviation of natural variability (noise) to determine the threshold for detecting the signal. When the observed changes in data (signal) exceed this threshold (usually defined as a multiple of the standard deviation of noise), the ToE is reached. Thus, a lower standard deviation of noise allows for earlier detection of the signal.
+
+If we use a definition of noise equal to 2 standard deviations, time of emergence (ToE) would have already occured for most of the tropical regions, most of South America, and a portion of the north pole. If our ToE defintion used the defintion of noise as 1 standard deviation (which we used for our own ToE figure) we would see areas in the northern hemisphere like the US and Eurasia have recently displayed ToE. 
+
+
+
+# Southereasaten Utah and Climate Change
+Upon observing these global phenomena, it then becomes of interest, how has Southeastern Utah been affected by all this? Can we quantify Southeastern Utah's own ToE with our established logic? How do temperature changes in Southeastern Utah stack up against other places in North America? Can we measure any impacts in the environment of Southeastern Utah (i.e., impacts on precipation and vegitation).
+
+
+## Temperature Anomalies in Southeastern Utah
+
+We first begin by using our data to specifically look at monthly temperature anomalies over the years in Southeastern Utah, Honolulu, and Nunavut. I chose Honolou and Nunavut, so we could compare Southeastern Utah to at least 1 location in a tropical region and also an Arctic region.
+
+```{Matlab,eval=FALSE}
+%% Plotting values in Utah, Honolulu, Nunavut
+lon_opts = [-77.03, -157.9, -68.5];     % lon values for these locationes
+lat_opts = [38.9, 21.3, 63.7];          % lat values for these locationes
+
+str = {'DC','Honolulu', 'Nunavut'};
+
+% creating loop for each location
+figure
+for jj = 1:3
+
+    % Finding corresponding grid cell is data
+    lon_target = lon_opts(jj);
+    lat_target = lat_opts(jj);
+    [minval, lonind] = min(abs(lon-lon_target));
+    [minval, latind] = min(abs(lat-lat_target));
+    
+    tmp = squeeze(temp_anom(lonind,latind,:));  % extracting temp anomaly data
+    
+    % computing the 1-year moving average
+    for ii = 1:length(tmp)-11
+        running_average(ii) = mean(tmp(ii:ii+11));
+    end
+    
+    % plotting time series
+    subplot(3,1,jj)
+    plot(time, tmp); % plotting monthly anomalies
+    hold on;
+    plot(time(6:end-6),running_average, 'r', 'LineWidth',2);  % adding 1-yr moving average
+    ylabel('annual temp anomaly [K]');  % labeling y axis
+    title(str{jj}) % adding title
+    xlim([1880,2023])  % setting x limit of plot
+    legend('monthly anomalies','1-yr moving average')
+    plot([1880,2023], [0,0],'k');  % adding a horizontal line at 0
+    ylim([-10, 10]) %setting ylim of plot
+end
+
+
+%% Historical range of variability
+
+figure
+for jj = 1:3
+    lon_target = lon_opts(jj);
+    lat_target = lat_opts(jj);
+    [minval, lonind] = min(abs(lon-lon_target));
+    [minval, latind] = min(abs(lat-lat_target));
+    
+    tmp = squeeze(temp_anom(lonind,latind,:));
+    
+    for ii = 1:floor(length(tmp)/12)
+        yearly_average(ii) = mean(tmp(12*(ii-1)+1:12*ii));
+    end
+    
+    yr_vals = time(6:12:end-6);
+
+    ind = yr_vals < 1930; 
+    histnoise(jj) = nanstd(yearly_average(ind));
+    histmean(jj) = nanmean(yearly_average(ind));
+    
+    subplot(3,1,jj)
+    plot(yr_vals, yearly_average, 'r', 'LineWidth',2);
+    ylabel('annual temp anomaly [K]');
+    title(str{jj})
+    xlim([1880,2023])
+
+    %hold on;
+    %plot([1880,2023], [0,0],'k'); 
+    hold on;
+    plot([1880,2023], [histmean(jj) + histnoise(jj),  histmean(jj) + histnoise(jj)],'--k')
+    hold on; 
+    plot([1880,2023], [histmean(jj) - histnoise(jj),  histmean(jj) - histnoise(jj)],'--k')
+    legend('1-yr moving average','mean + Sigma','mean - Sigma', 'Location','northwest')
+end
+
+
+%% Historical range of variability with smooth signal
+
+
+figure
+for jj = 1:3
+
+    % finding closest grid cell to location
+    lon_target = lon_opts(jj);
+    lat_target = lat_opts(jj);
+    [minval, lonind] = min(abs(lon-lon_target));
+    [minval, latind] = min(abs(lat-lat_target));
+    
+    tmp = squeeze(temp_anom(lonind,latind,:));  % extracting time series of closest grid cell
+    
+    % yearly mean anomaly
+    for ii = 1:floor(length(tmp)/12)
+        yearly_average(ii) = mean(tmp(12*(ii-1)+1:12*ii));
+    end
+    
+    yr_vals = time(6:12:end-6);  % centering time vector at year intervals centered on midpoints of moving average
+
+    ind = yr_vals < 1930; 
+    % historical std of annual mean temp anomalies
+    histnoise(jj) = nanstd(yearly_average(ind));  % calculating noise from yearly means NOT the 1-yr moving average
+    histmean(jj) = nanmean(yearly_average(ind));  % calculating mean from yearly means NOT the 1-yr moving average
+    
+    % looking at 30-yr moving average to identify the 'signal'
+    clear Signal
+    for ii = 1:floor(length(tmp)/12) - 29
+        Signal(ii) = nanmean(tmp(12*(ii-1)+1:12*(29+ii))); %30 year moving average signal
+    end
+
+    yr_30yrwindow = yr_vals(15:end-15);  % corresponding years to the 30 year moving average
+   
+    % Finding first year when the Signal is at least 1 std above historical mean. 
+    ind = find(Signal > histmean(jj) + histnoise(jj), 1);  % index of the first year with S>N
+    ToE(jj) = yr_30yrwindow(ind);  % year corresponding to index
+
+    % plotting results to check that ToE is calculated properly
+    subplot(3,1,jj)
+    plot(yr_30yrwindow, Signal, 'r', 'LineWidth',2);
+    ylabel('annual temp anomaly [K]');
+    title(str{jj})
+    xlim([1880,2023])
+
+    hold on;
+    plot([1880,2023], [histmean(jj) + histnoise(jj),  histmean(jj) + histnoise(jj)],'--k')  % historical mean + 1 sigma line
+    hold on; 
+    plot([1880,2023], [histmean(jj) - histnoise(jj),  histmean(jj) - histnoise(jj)],'--k')  % historical mean + 1 sigma line
+
+    hold on; 
+    xlim([1895, 2010])
+    plot([ToE(jj),ToE(jj)],[-5, 5])  % plotting the Time of Emergence as a vertical line
+end
+```
+
+##### Monthly Temperature Anomalies (K) in North America
+![](figs/location_anom.png)
+*Figure 3. Date Range: 1880-Present. Canadian Centre for Climate Modelling and Analysis (CCCma) CanESM5-CanOE model*
+
+We can first observe that there is a lot of noise in our graph. We can definitely see at some point that the temperature anomalies venture out of the 1 standard deviation intervals at some point for each of the 3 locations, marking a definite ToE for each. We will go ahead and apply a 30-year moving average to the data in order to smooth the data. We will also calculate and plot ToE's for each of the locations.
+
+##### 30-Year Smoothed Monthly Temperature Anomalies (K) in North America
+![](figs/location_anom_smooth.png)
+*Figure 4. Date Range: 1880-Present. Canadian Centre for Climate Modelling and Analysis (CCCma) CanESM5-CanOE model*
+
+With our data smoothed, we can now observe clearer trends in the data. We can observe ToE's for Southeastern Utah, Honolulu, and Nunavut to be the years 1985, 1952, and 1935, respectively. These findings are consistent with our earlier observations that areas closer to poles and the tropical regions showing the first signs of climate change with more southern parts of North America and Eurasia slowly following suit.
+
+Knowing now that Southeastern Utah has an estimated ToE in the year 1985, we can use this knowledge to see, for one, if we can observe any noticeable impacts in precipitation and vegetation after this year, and two, if there are any broader long term trends in the area we can observe regrading precipitation and vegetation. 
+```{r,echo = FALSE,message=FALSE,warning=FALSE}
+# Set theme for plots
+library(extrafont)
+library(ggplot2)
+library(dplyr)
+library(zoo)
+library(plotly)
+my_theme <- theme_bw() + 
+  theme(
+    plot.background = element_rect(fill = "#fdf5d8"),
+    panel.background = element_rect(fill = "#fdf5d8"),
+    panel.border = element_rect(color= "#f4b54f"),
+    plot.title = element_text(family = "DecimaNova", size = 16, 
+                              face = "bold"),
+    plot.subtitle = element_text(family = "DecimaNova", size = 12),
+    axis.title = element_text(family = "DecimaNova", 
+                              face = "bold"),
+    plot.caption = element_text(family = "Decima+ 2", size=10,
+                                face = "italic"),
+    legend.background = element_rect(fill = "#fdf5d8",color = "#f4b54f"),
+    legend.text = element_text(family = "DecimaNova", size = 10),
+    legend.title = element_text(family = "DecimaNova", size = 12, face = "bold"),
+    legend.key = element_rect(fill = "#fdf5d8"),
+    axis.text.x = element_text(family = "DecimaNova", size = 9),
+    axis.text.y = element_text(family = "DecimaNova", size = 9),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "#feedad"),
+    strip.text = element_text(color = "white",family = "DecimaNova"),
+    strip.background = element_rect(fill = "#f4b54f")
+  )
+
+theme_set(my_theme)
+
+```
+
+
+```{r,echo = FALSE,message=FALSE,warning=FALSE}
+color_palette <- c("#A8C4FF", "#A56A6E", "#89B587", "#6A7FAB", "#FFDAA1", "#EFA4D6", "#7C5FBC", "#F2B37A")
+```
+
+```{r,echo = FALSE,message=FALSE,warning=FALSE}
+library(dplyr)
+historic <- read.csv("data/NABR_historic.csv")
+temp_annual <- historic %>%
+  select(long,lat,year,T_Annual,T_Winter,T_Summer)
+near_term <- read.csv("data/nearterm_data_2020-2024.csv")
+
+df <-rbind(historic,near_term)
+```
+
+
+```{r,echo = FALSE,message=FALSE,warning=FALSE}
+# Making sure only unique rows for each lat, lon, year pair are kept
+# Only keeping vegetation for now
+means_by_year <- df %>%
+  group_by(year) %>%
+  summarize(
+    treecanopy_mean = mean(treecanopy),
+    Ann_Herb_mean = mean(Ann_Herb),
+    Bare_mean = mean(Bare),
+    Herb_mean = mean(Herb),
+    Litter_mean = mean(Litter),
+    Shrub_mean = mean(Shrub),
+    PPT_mean = mean(PPT_Annual,na.rm = TRUE),
+    Tmax_Summer_mean = mean(Tmax_Summer,na.rm = TRUE),
+    Tmin_Winter_mean = mean(Tmin_Winter,na.rm = TRUE),
+    VWC_Winter_whole_mean=mean(VWC_Winter_whole,na.rm = TRUE),
+    VWC_Spring_whole_mean=mean(VWC_Spring_whole,na.rm = TRUE),
+    VWC_Summer_whole_mean=mean(VWC_Summer_whole,na.rm = TRUE),
+    VWC_Fall_whole_mean=mean(VWC_Fall_whole,na.rm = TRUE))
+```
+
+## Maximum Summer and Minimum Winter Temperatures
+While we already looked at temperature anomalies as a whole, I still wanted to take a look at how the hottest recorded temperatures in the summer and coldest winter temperatures have developed in Utah over the years. Looking at visualizations of these measures are a little bit more interpretable than looking at tempertaure anomalies in Kelvin.
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+
+# Smooth the Tmax_Summer_mean values
+means_by_year <- means_by_year %>%
+  mutate(Tmax_Summer_mean_smoothed = zoo::rollapply(Tmax_Summer_mean, width = 3, FUN = mean, fill = NA, align = "right"))
+
+# Create a ggplot for Tmax_Summer_mean with smoothing
+smoothed_plot <- ggplot(means_by_year, aes(x = year, y = Tmax_Summer_mean_smoothed)) +
+  geom_smooth(color = "red") +
+  labs(x = "Year", y = "Mean Tmax Summer", title = "Mean Tmax Summer by Year") +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(size = 16, face = "bold", family = "DecimaNova"),
+    axis.title = element_text(size = 12, face = "bold", family = "DecimaNova"),
+    axis.text = element_text(size = 10, family = "DecimaNova"),
+    legend.text = element_text(size = 10, family = "DecimaNova"),
+    legend.title = element_text(size = 12, face = "bold", family = "DecimaNova")
+  ) +
+  geom_vline(xintercept = 1985, linetype = "dashed", color = "black") +
+  annotate("text", x = 1985, y = 37, 
+           label = "Time of Emergence", 
+           vjust = -1, hjust = 0, color = "black", size = 3, angle = 90, 
+           family = "DecimaNova")
+
+# Convert ggplot to Plotly
+plotly_plot <- ggplotly(smoothed_plot) %>%
+  layout(
+    title = list(text = "Smoothed Mean Max Summer Temp by Year"),
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Mean Temperature (Celsius)"),
+    legend = list(orientation = "h"),
+    autosize = TRUE,
+    showlegend = TRUE,
+    plot_bgcolor = "#fdf5d8", 
+    font = list(family = "DecimaNova"),
+    paper_bgcolor = "#fdf5d8"
+  )
+
+# Display the Plotly plot
+plotly_plot
+
+```
+*Figure 5. Date Range: 1980-Present. U.S. Geological Survey*
+
+We are able to see with a smoothed plot (using the zoo package in R) that summers in Southeastern Utah have been consistently getting hotter. It should be noted that the confidence bands represent where the non-smoothed yearly data falls on the plot. We already sort of knew this after our analysis in the previous section, but this plot just lays it out in a more interpretable way. The region's coldest winter temperatures can be seen below.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+# Smoothed ggplot
+smoothed_plot <- ggplot(means_by_year, aes(x = year, y = Tmin_Winter_mean)) +
+  geom_smooth(color = "blue") +
+  labs(x = "Year", y = "Mean Tmin Winter", title = "Mean Tmin Winter by Year") +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(size = 16, face = "bold", family = "DecimaNova"),
+    axis.title = element_text(size = 12, face = "bold", family = "DecimaNova"),
+    axis.text = element_text(size = 10, family = "DecimaNova"),
+    legend.text = element_text(size = 10, family = "DecimaNova"),
+    legend.title = element_text(size = 12, face = "bold", family = "DecimaNova")
+  )+
+  geom_vline(xintercept = 1985, linetype = "dashed", color = "black")+
+  annotate("text", x = 1985, y = -10, 
+           label = "Time of Emergence", 
+           vjust = -1, hjust = 0, color = "black", size = 3, angle = 90, 
+           family = "DecimaNova")
+
+# Convert ggplot to Plotly
+plotly_plot <- ggplotly(smoothed_plot) %>%
+  layout(
+    title = "Smoothed Mean Minimum Winter Temp by Year",
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Mean Temperature (Celcius)"),
+    legend = list(orientation = "h"),
+    autosize = TRUE,
+    showlegend = TRUE,
+    plot_bgcolor = "#fdf5d8", 
+    font = list(family = "DecimaNova"),
+    titlefont = list(size = 16, color = "black", family = "DecimaNova", face = "bold"),
+    xaxis = list(title = "Year", tickfont = list(family = "DecimaNova", size = 9)),
+    yaxis = list(title = "Mean Tmin Winter", tickfont = list(family = "DecimaNova", size = 9)),
+    legendfont = list(family = "DecimaNova", size = 10, color = "#f4b54f"),
+    paper_bgcolor = "#fdf5d8"
+  )
+
+# Display the Plotly plot
+plotly_plot
+```
+*Figure 7. Date Range: 1980-Present. U.S. Geological Survey*
+
+Our coldest winter plot shows us how there is not as clear of a long term trend, with still some variability in mean minimum winter temperature, even with a smoothed plot. It is important to notice, however, even with some extreme dips in temperatures throughout the years, there is no long term trend to suggest winters are getting colder just like summers are getting hotter.
+
+
+## Precipitation in Southeastern Utah
+In this section, we first will begin by looking at how precipitation may have been effected by the raising temperatures in Southeastern Utah. Below is a figure displaying a smoothed plot (smoothed using the zoo package in R) of the annual rainfall in the region over the years. The confidence bands represent where the non-smoothed yearly data falls on the plot.
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+library(ggplot2)
+library(plotly)
+library(zoo)
+
+# Smooth the PPT_mean values
+means_by_year <- means_by_year %>%
+  mutate(PPT_mean_smoothed = zoo::rollapply(PPT_mean, width = 3, FUN = mean, fill = NA, align = "right"))
+
+# Create a ggplot for PPT_mean with smoothing
+smoothed_plot_ppt <- ggplot(means_by_year, aes(x = year, y = PPT_mean)) +
+  geom_smooth(color = "lightblue") +
+  labs(x = "Year", y = "Mean Annual Rainfall (cm)", title = "Mean Annual Rainfall (PPT) by Year") +
+  theme_bw() + 
+  theme(
+    plot.title = element_text(size = 16, face = "bold", family = "DecimaNova"),
+    axis.title = element_text(size = 12, face = "bold", family = "DecimaNova"),
+    axis.text = element_text(size = 10, family = "DecimaNova"),
+    legend.text = element_text(size = 10, family = "DecimaNova"),
+    legend.title = element_text(size = 12, face = "bold", family = "DecimaNova")
+  )
+
+# Convert ggplot to Plotly
+plotly_plot_ppt <- ggplotly(smoothed_plot_ppt) %>%
+  layout(
+    title = "Smoothed Mean Annual Rainfall (PPT) by Year",
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Mean Annual Rainfall (cm)"),
+    legend = list(orientation = "h"),
+    autosize = TRUE,
+    showlegend = TRUE,
+    plot_bgcolor = "#fdf5d8", 
+    font = list(family = "DecimaNova"),
+    titlefont = list(size = 16, color = "black", family = "DecimaNova", face = "bold"),
+    xaxis = list(title = "Year", tickfont = list(family = "DecimaNova", size = 9)),
+    yaxis = list(title = "Mean Annual Rainfall (cm)", tickfont = list(family = "DecimaNova", size = 9)),
+    legendfont = list(family = "DecimaNova", size = 10, color = "#f4b54f"),
+    paper_bgcolor = "#fdf5d8"
+  )
+
+# Display the Plotly plot
+plotly_plot_ppt
+
+```
+*Figure 8. Date Range: 1980-Present. U.S. Geological Survey*
+
+Overall, we can see that mean annual precipitation has trended downwards since 1980, with the sharpest decrease occurring in the 1980s, right around when we observed our ToE. This decrease in precipitation is consistent with what we know about climate change. According to the [Center for Climate and Energy Solutions](https://www.c2es.org/content/drought-and-climate-change/#:~:text=How%20climate%20change%20contributes%20to,the%20timing%20of%20water%20availability.), warmer temperatures increase evaporation, which lowers surface water levels and dries out soils and vegetation. This intensifies drought conditions during periods of low precipitation compared to cooler conditions. Additionally, climate change is shifting the timing of water availability.
+
+
+## Soil Volumetric Water Content in Southeastern Utah soil
+Knowing soil can also become dry with raising temperatures and lower precipitation, I decided to take a look at how the soil in southeastern Utah has fared over the years in terms of water content. We will take a look at the variable VWC, the volumetric water content in the whole soil profile, for each season.
+
+```{r}
+library(ggplot2)
+# Plotting VWC values against year
+ggplot(means_by_year, aes(x = year)) +
+  geom_line(aes(y = VWC_Winter_whole_mean, color = "Winter")) +
+  geom_line(aes(y = VWC_Spring_whole_mean, color = "Spring")) +
+  geom_line(aes(y = VWC_Summer_whole_mean, color = "Summer")) +
+  geom_line(aes(y = VWC_Fall_whole_mean, color = "Fall")) +
+  labs(x = "Year", y = "Mean Volumetric Water Content (m^3)", color = "Season") +
+  scale_color_manual(values = c("Winter" = "#A8C4FF", "Spring" = "#A56A6E", "Summer" = "#89B587", "Fall" = "#EFA4D6")) +
+  ggtitle("Mean Volumetric Water Content (VWC) by Season (m^3)")
+```
+*Figure 9. Date Range: 1980-Present. U.S. Geological Survey*
+
+We can first see when we plot our year-to-year data without any smoothing, there is too much noise to really discern any major patterns. For such reason, I applied moving average smoothing using the zoo package in R, with a window size of k=6.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(zoo)  # for moving average function
+
+# Apply moving average smoothing to each VWC variable
+means_by_year_smoothed <- means_by_year %>%
+  mutate(
+    VWC_Winter_whole_mean_smoothed = zoo::rollmean(VWC_Winter_whole_mean, k = 6, na.pad = TRUE),
+    VWC_Spring_whole_mean_smoothed = zoo::rollmean(VWC_Spring_whole_mean, k = 6, na.pad = TRUE),
+    VWC_Summer_whole_mean_smoothed = zoo::rollmean(VWC_Summer_whole_mean, k = 6, na.pad = TRUE),
+    VWC_Fall_whole_mean_smoothed = zoo::rollmean(VWC_Fall_whole_mean, k = 6, na.pad = TRUE)
+  )
+```
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(plotly)
+
+plot <- plot_ly(means_by_year_smoothed, x = ~year) %>%
+  add_lines(y = ~VWC_Winter_whole_mean_smoothed, name = "Winter", line = list(color = "#A8C4FF")) %>%
+  add_lines(y = ~VWC_Spring_whole_mean_smoothed, name = "Spring", line = list(color = "#A56A6E")) %>%
+  add_lines(y = ~VWC_Summer_whole_mean_smoothed, name = "Summer", line = list(color = "#89B587")) %>%
+  add_lines(y = ~VWC_Fall_whole_mean_smoothed, name = "Fall", line = list(color = "#EFA4D6")) %>%
+  layout(
+    title = "Smoothed Mean Volumetric Water Content (VWC) by Season",
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Mean Volumetric Water Content"),
+    legend = list(orientation = "h"),
+    plot_bgcolor = "#fdf5d8", # Set plot background color
+    font = list(family = "DecimaNova"), # Set font family
+    titlefont = list(size = 16, color = "black", family = "DecimaNova", face = "bold"), # Customize title
+    xaxis = list(title = "Year", tickfont = list(family = "DecimaNova", size = 9)), # Customize x-axis
+    yaxis = list(title = "Mean Volumetric Water Content", tickfont = list(family = "DecimaNova", size = 9)), # Customize y-axis
+    legendfont = list(family = "DecimaNova", size = 10, color = "#f4b54f"), # Customize legend
+    paper_bgcolor = "#fdf5d8", # Set paper background color
+    shapes = list(
+      list(
+        type = "line",
+        x0 = 1985,
+        x1 = 1985,
+        y0 = 0.06,
+        y1 = 0.16,
+        line = list(color = "black", dash = "dash")
+      )
+    ),
+    annotations = list(
+      list(
+        x = 1985,
+        y = max(means_by_year_smoothed$VWC_Fall_whole_mean_smoothed, na.rm = TRUE),
+        text = "Time of Emergence",
+        showarrow = FALSE,
+        xanchor = "right",
+        yanchor = "top",
+        xref = "x",
+        yref = "y",
+        font = list(color = "black", size = 10, family = "DecimaNova"),
+        textangle = -90
+      )
+    )
+  )
+
+# Display the plot
+plot
+
+
+
+
+```
+*Figure 10. Date Range: 1980-Present. U.S. Geological Survey*
+
+With the smoothing applied, we can see that, besides with the summer months, starting in 1985 there was a drop-off in water content in Southeastern Utah's soil, followed by a steady decrease up until present day. It is really interesting to see that soil water content so closely follows the ToE of 1985 that we calculated in previous sections.
+
+```{r,echo = FALSE}
+# Calculate means for rows 1 to 6 and 6 onwards
+# Filter the data for rows from 1980 to 1985
+df_1980_to_1985 <- means_by_year %>%
+  filter(year >= 1980 & year <= 1985)
+
+# Calculate the mean of each column for 1980 to 1985
+means_1980_to_1985 <- colMeans(df_1980_to_1985, na.rm = TRUE)
+
+# Filter the data for rows from 1986 onwards
+df_1986_onwards <- means_by_year %>%
+  filter(year >= 1986)
+
+# Calculate the mean of each column for 1986 onwards
+means_1986_onwards <- colMeans(df_1986_onwards, na.rm = TRUE)
+
+# Create a new dataframe with means for both time periods
+means_toe<-data.frame(rbind(means_1980_to_1985,means_1986_onwards))
+means_toe<-means_toe[,2:7]
+```
+
+
+
+## Vegetation in Southeastern Utah
+With an observed decrease in water content in Southeastern Utah, the next most logical question is to ask how this lower water content has effected vegetation in the area over time. The following figure captures the percentage changes of vegetation in the region from pre and post ToE time periods.
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(gridExtra)
+
+# Define the data frames
+means_1980_to_1985 <- data.frame(
+  Feature = c("Tree Canopy", "Ann. Herbaceous", "Bare","Herbaceous", "Litter", "Shrub"),
+  Value = c(10.02156, 0.2425346, 55.73020, 9.629056, 11.89551, 15.64966),
+  Time_Period = "1980-1985"
+)
+
+means_1986_onwards <- data.frame(
+  Feature = c("Tree Canopy", "Ann. Herbaceous", "Bare","Herbaceous", "Litter", "Shrub"),
+  Value = c(10.01300, 0.2276406, 56.29386, 9.528686, 11.73950, 15.43734),
+  Time_Period = "1986-Present"
+)
+
+# Create a color palette
+color_palette <- c("#A8C4FF", "#A56A6E", "#89B587", "#6A7FAB", "#FFDAA1", "#EFA4D6")
+
+# Function to create individual plots for each feature
+create_feature_plot <- function(feature_name, color) {
+  feature_df <- rbind(means_1980_to_1985, means_1986_onwards)
+  feature_df <- feature_df[feature_df$Feature == feature_name, ]
+  ggplot(feature_df, aes(x = Time_Period, y = Value, group = 1)) +
+    geom_point(aes(color = Feature), size = 3) + 
+    geom_line(aes(color = Feature)) +
+    labs(title = feature_name, x = "Time Period", y = "Percentage Coverage") +
+    theme(legend.position = "none") + 
+    ylim(min(feature_df$Value) - 1, max(feature_df$Value) + 1) + 
+    scale_color_manual(values = color) # Set color for each plot
+}
+
+# Create individual plots for each feature
+feature_plots <- lapply(seq_along(unique(means_1980_to_1985$Feature)), function(i) {
+  create_feature_plot(unique(means_1980_to_1985$Feature)[i], color_palette[i])
+})
+
+
+# Plot arrangement with main title and subplots
+grid.arrange(main_title, grobs = feature_plots, ncol = 3, top = "Percentage Vegetation Coverage Difference Between pre and post ToE (1985)")
+
+
+
+```
+*Figure 11. Date Range: 1980-Present. U.S. Geological Survey*
+
+This plot shows us how, as we expected, the reduced water content in the soil due to rising temperatures and less precipitation have caused vegetation overall to decrease in the area and "bare" areas (areas without vegetation) are increasing. The 1985 ToE and dropoff in soil moisture has had direct consequences on Southeastern Utah's environment and ability to support plant life in the ecosystem. It is particurally interseting to observe these phenomena in that Utah is not necessarily an area to be normally thought of as being impacted by climate change, at least relative to tropical regions and at the poles. If current trends continue, further destruction of plant life can be expected in the region.
+
+
+
+# Conclusion
+## Project Overview
+In conclusion, the analysis presented here underscores the profound impact of anthropogenic climate change on the Earth's changing landscape, with a particular focus on Southeastern Utah. Through a thorough examination of temperature anomalies, signal-to-noise ratios, and time of emergence, we've illuminated the stark reality of climate change and its visible effects on our planet's ecosystems.
+
+From the alarming rise in global carbon dioxide levels to the clear signals of warming temperatures across the globe, it's evident that human activities are driving significant environmental shifts. The identification of the time of emergence in Southeastern Utah, marked by a noticeable drop in soil moisture and subsequent changes in vegetation, serves as a poignant reminder of the localized impacts of climate change.
+
+
+## Final Reccomendations
+The analysis conducted underscores the urgent need for concerted action to address the profound impacts of anthropogenic climate change, particularly evident in regions like Southeastern Utah. Moving forward, future research efforts should focus on several key areas. Firstly, there is a critical need for enhanced understanding of localized climate change effects, including their interactions with natural ecosystems and human communities. This necessitates further investigation into the specific mechanisms driving changes in temperature anomalies, signal-to-noise ratios, and the time of emergence observed in Southeastern Utah. 
+
+Additionally, future research should prioritize the development of robust climate models that accurately capture regional climate dynamics, enabling more precise projections of future climate scenarios at the local level. Moreover, interdisciplinary research collaborations between scientists, policymakers, and local stakeholders are essential for identifying effective adaptation strategies tailored to the unique challenges posed by climate change in Southeastern Utah and similar regions worldwide.
+
+
+# References
+http://people.whitman.edu/~frierspr/Crutzen%20and%20Stoermer%202000%20Anthropocene%20essay.pdf
+
+https://www.climate.gov/news-features/understanding-climate/climate-change-atmospheric-carbon-dioxide
+
+https://www.climate-lab-book.ac.uk/2014/signal-noise-emergence/
+
+https://www.sciencebase.gov/catalog/file/get/61a6952fd34eb622f6978d9f?f=__disk__78%2F99%2F9b%2F78999b749568b2fbba86ce5dc9fc89aebe469388&transform=1&allowOpen=true
+
+https://www.wdc-climate.de/ui/cmip6?input=CMIP6.CMIP.CCCma.CanESM5.historical
